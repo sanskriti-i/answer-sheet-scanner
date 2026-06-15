@@ -36,7 +36,7 @@ jobs:
         rm -rf android
         
         # 3. Initialize Capacitor with explicit pointer properties
-        npx cap init "AI Scanner" "com.sanskriti.aiscanner" --web-dir="www"
+        npx cap config set server.url "https://sanskriti006-answer-sheet-scanner.hf.space"
         
         # 4. 🔴 CONFIGURE WRAPPER TO LAUNCH YOUR LIVE HOSTED URL
         # Replace the URL below if your deployment link is different!
