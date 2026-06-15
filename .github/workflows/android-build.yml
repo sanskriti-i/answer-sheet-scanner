@@ -35,11 +35,11 @@ jobs:
         # 2. Clear old template directory layout
         rm -rf android
         
-        # 3. 🟢 DIRECTLY WRITE CLEAN CONFIGURATION DATA INTO A JSON FILE
+        # 3. DIRECTLY WRITE CLEAN CONFIGURATION DATA INTO A JSON FILE
         cat << 'EOF' > capacitor.config.json
         {
           "appId": "com.sanskriti.aiscanner",
-          "appName": "AI Scanner",
+          "appName": "answer sheet scanner",
           "webDir": "www",
           "server": {
             "url": "https://sanskriti006-answer-sheet-scanner.hf.space",
@@ -51,7 +51,7 @@ jobs:
         # 4. Generate a fresh native structure using our explicit JSON layout rules
         npx cap add android
         
-        # 5. Re-inject your custom native configurations (Manifest permissions)
+        # 5. Inject your custom native configurations (Manifest permissions)
         if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
           cp -r /tmp/custom_src/* android/app/src/main/
         fi
