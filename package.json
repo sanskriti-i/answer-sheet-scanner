@@ -1,14 +1,14 @@
 {
-  "name": "ai-marks-scanner",
+  "name": "answer-sheet-scanner",
   "version": "1.0.0",
-  "description": "Android app wrapper for Streamlit Scanner",
+  "description": "Mobile app wrapper for AI scanner",
   "main": "index.js",
-  "scripts": {
-    "build": "echo 'No frontend compile needed for live URL wrapper'"
-  },
   "dependencies": {
     "@capacitor/core": "^6.0.0",
-    "@capacitor/cli": "^6.0.0",
-    "@capacitor/android": "^6.0.0"
+    "@capacitor/android": "^6.0.0",
+    "capacitor-blob-writer": "^1.1.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.0.0"
   }
 }
