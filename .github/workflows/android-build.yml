@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20
+
+    - name: Setup Java Environment
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install Wrapper Tools
+      run: |
+        npm install
+
+    - name: Initialize Capacitor Wrapper Configuration
+      run: |
+        npx cap init "AI Scanner" "com.sanskriti.aiscanner" --web-dir=.
+
+    - name: Inject Direct Hugging Face App URL
+      run: |
+        echo '{
+          "server": {
+            "url": "https://sanskriti006-answer-sheet-scanner.hf.space",
+            "cleartext": true
+          }
+        }' > capacitor.config.json
+
+    - name: Create Android Native Directory
+      run: |
+        npx cap add android
+
+    - name: Compile and Build APK via Gradle
+      run: |
+        cd android && ./gradlew assembleDebug
+
+    - name: Upload Compiled APK to GitHub Panel
+      uses: actions/upload-artifact@v4
+      with:
+        name: Android-App-APK
+        path: android/app/build/outputs/apk/debug/app-debug.apk
