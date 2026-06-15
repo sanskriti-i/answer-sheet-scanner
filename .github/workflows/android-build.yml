@@ -35,23 +35,28 @@ jobs:
         # 2. Clear old template directory layout
         rm -rf android
         
-        # 3. Initialize Capacitor with explicit pointer properties
-        npx cap config set server.url "https://sanskriti006-answer-sheet-scanner.hf.space"
+        # 3. 🟢 DIRECTLY WRITE CLEAN CONFIGURATION DATA INTO A JSON FILE
+        cat << 'EOF' > capacitor.config.json
+        {
+          "appId": "com.sanskriti.aiscanner",
+          "appName": "AI Scanner",
+          "webDir": "www",
+          "server": {
+            "url": "https://sanskriti006-answer-sheet-scanner.hf.space",
+            "cleartext": true
+          }
+        }
+        EOF
         
-        # 4. 🔴 CONFIGURE WRAPPER TO LAUNCH YOUR LIVE HOSTED URL
-        # Replace the URL below if your deployment link is different!
-        npx cap config set server.url "https://sanskriti-i-answer-sheet-scanner.hf.space"
-        npx cap config set server.cleartext true
-        
-        # 5. Build native platform workspace templates
+        # 4. Generate a fresh native structure using our explicit JSON layout rules
         npx cap add android
         
-        # 6. Re-inject your custom native configurations (Manifest permissions)
+        # 5. Re-inject your custom native configurations (Manifest permissions)
         if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
           cp -r /tmp/custom_src/* android/app/src/main/
         fi
         
-        # 7. Finalize assets sync verification
+        # 6. Finalize assets sync verification
         npx cap sync android
 
     - name: Setup Java Development Kit JDK 17
