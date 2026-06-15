@@ -22,29 +22,35 @@ jobs:
         npm install @capacitor/core @capacitor/cli --legacy-peer-deps
         npm install --legacy-peer-deps
         mkdir -p www
-        echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading App...</h1></body></html>' > www/index.html
+        echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading...</h1></body></html>' > www/index.html
 
-    - name: Handle Capacitor Platform Configuration
+    - name: Reconstruct Stable Android Native Wrapper Workspace
       run: |
-        if [ -d "android" ]; then
-          echo "✅ Android folder already present. Syncing assets..."
-          npx cap sync android
-        else
-          echo "Creating native layout directories..."
-          npx cap add android
+        # 1. Back up your custom native source code temporarily
+        mkdir -p /tmp/custom_src
+        if [ -d "android/app/src/main" ]; then
+          cp -r android/app/src/main/* /tmp/custom_src/
         fi
+        
+        # 2. Wipe the incomplete layout directory
+        rm -rf android
+        
+        # 3. Force Capacitor to generate a pristine, official native structure complete with standard gradlew wrapper tools
+        npx cap add android
+        
+        # 4. Inject your custom source components back into the fresh clean template
+        if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
+          cp -r /tmp/custom_src/* android/app/src/main/
+        fi
+        
+        # 5. Sync web asset declarations safely
+        npx cap sync android
 
     - name: Setup Java Development Kit JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
-
-    - name: Generate Missing Gradle Wrapper files
-      run: |
-        cd android
-        # 🟢 Generates official gradlew executables automatically if they aren't in your repository
-        gradle wrapper --gradle-version 8.2
 
     - name: Compile and Build APK via Gradle Wrapper
       run: |
