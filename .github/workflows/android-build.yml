@@ -26,16 +26,10 @@ jobs:
 
     - name: Reconstruct Stable Android Native Wrapper Workspace
       run: |
-        # 1. Temporarily back up main custom src files
-        mkdir -p /tmp/custom_src
-        if [ -d "android/app/src/main" ]; then
-          cp -r android/app/src/main/* /tmp/custom_src/
-        fi
-        
-        # 2. Wipe the old cached android layout completely
+        # 1. Clear old configuration cache layouts completely
         rm -rf android
         
-        # 3. Create configuration file pointing to your live space
+        # 2. Create configuration file pointing to your live space
         cat << 'EOF' > capacitor.config.json
         {
           "appId": "com.sanskriti.aiscanner",
@@ -48,18 +42,16 @@ jobs:
         }
         EOF
         
-        # 4. Generate a brand new platform workspace
+        # 3. Generate a brand new platform workspace
         npx cap add android
-        
-        # 5. Bring back custom configurations (Manifest permissions)
-        if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
-          cp -r /tmp/custom_src/* android/app/src/main/
-        fi
 
-        # 6. FORCE ANDROID HARD-CODED NAME TO "answer sheet scanner"
+        # 4. 🟢 CRASH FIX: Grant Intent Queries permission so app can safely talk to Chrome/System Browser
+        sed -i '/<\/manifest>/i \    <queries>\n        <intent>\n            <action android:name="android.intent.action.VIEW" \/>\n            <category android:name="android.intent.category.BROWSABLE" \/>\n            <data android:scheme="https" \/>\n        <\/intent>\n    <\/queries>' android/app/src/main/AndroidManifest.xml
+
+        # 5. FORCE ANDROID HARD-CODED NAME TO "answer sheet scanner"
         sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">answer sheet scanner<\/string>/g' android/app/src/main/res/values/strings.xml
         
-        # 7. CONFIGURE MOBILE WEBVIEW TO FORCE ENCRYPTED/BLOB EXCEL DOWNLOADS VIA THE SYSTEM BROWSER
+        # 6. CONFIGURE MOBILE WEBVIEW TO FORCE EXCEL DOWNLOADS VIA NATIVE INTENT
         cat << 'EOF' > android/app/src/main/java/com/sanskriti/aiscanner/MainActivity.java
         package com.sanskriti.aiscanner;
 
@@ -67,7 +59,6 @@ jobs:
         import android.net.Uri;
         import android.os.Bundle;
         import android.webkit.DownloadListener;
-        import android.webkit.WebView;
         import com.getcapacitor.BridgeActivity;
 
         public class MainActivity extends BridgeActivity {
@@ -75,20 +66,23 @@ jobs:
             public void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
                 
-                // Set up listener to capture and download files in system browser
                 this.getBridge().getWebView().setDownloadListener(new DownloadListener() {
                     @Override
                     public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {
-                        Intent i = new Intent(Intent.ACTION_VIEW);
-                        i.setData(Uri.parse(url));
-                        startActivity(i);
+                        try {
+                            Intent i = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                            i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(i);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
             }
         }
         EOF
 
-        # 8. Finalize sync
+        # 7. Finalize sync
         npx cap sync android
 
     - name: Setup Java Development Kit JDK 17
