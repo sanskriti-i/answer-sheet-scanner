@@ -15,18 +15,19 @@ jobs:
     - name: Setup Node.js Environment
       uses: actions/setup-node@v4
       with:
-        node-size: 20
         node-version: 'lts/*'
 
     - name: Install Mobile Build Dependencies
       run: |
-        npm install @capacitor/core @capacitor/cli
-        npm install
+        # 🟢 Added --legacy-peer-deps to force installation past dependency conflicts
+        npm install @capacitor/core @capacitor/cli --legacy-peer-deps
+        npm install --legacy-peer-deps
+        mkdir -p www
 
     - name: Handle Capacitor Platform Configuration
       run: |
         if [ -d "android" ]; then
-          echo "✅ Android folder already present. Skipping initialization initialization and syncing assets..."
+          echo "✅ Android folder already present. Syncing assets..."
           npx cap sync android
         else
           echo "Creating native layout directories..."
