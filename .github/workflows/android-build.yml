@@ -39,7 +39,7 @@ jobs:
       run: |
         echo '{
           "appId": "com.sanskriti.aiscanner",
-          "appName": "AI Scanner",
+          "appName": "Answer Sheet Scanner",
           "webDir": "www",
           "server": {
             "url": "https://sanskriti006-answer-sheet-scanner.hf.space",
