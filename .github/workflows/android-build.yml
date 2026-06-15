@@ -52,6 +52,15 @@ jobs:
         npx cap add android
         npx cap sync android
 
+    - name: Inject Manifest and Android Layout Framework Keys
+      run: |
+        # Inject explicit system download and wake lock declarations directly into the clean manifest build template
+        SED_TARGET="android/app/src/main/AndroidManifest.xml"
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />' $SED_TARGET
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $SED_TARGET
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' $SED_TARGET
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WAKE_LOCK" />' $SED_TARGET
+
     - name: Compile and Build APK via Gradle
       run: |
         cd android && ./gradlew assembleDebug
@@ -61,3 +70,4 @@ jobs:
       with:
         name: Android-App-APK
         path: android/app/build/outputs/apk/debug/app-debug.apk
+        
