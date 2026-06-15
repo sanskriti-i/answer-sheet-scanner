@@ -51,6 +51,19 @@ jobs:
       run: |
         npx cap add android
 
+    - name: Inject Android Download & Storage Permissions
+      run: |
+        # Inject download engine features and storage permissions straight into the Android Manifest file
+        SED_TARGET="android/app/src/main/AndroidManifest.xml"
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.INTERNET" />' $SED_TARGET
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />' $SED_TARGET
+        sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />' $SED_TARGET
+        
+        # Configure WebView to explicitly allow downloads via code injection
+        MA_PATH="android/app/src/main/java/com/sanskriti/aiscanner/MainActivity.java"
+        sed -i '/import com.getcapacitor.BridgeActivity;/a import android.webkit.DownloadListener;\nimport android.webkit.URLUtil;\nimport android.net.Uri;\nimport android.content.Intent;\nimport android.os.Environment;\nimport android.app.DownloadManager;\nimport android.widget.Toast;' $MA_PATH
+        sed -i '/public class MainActivity extends BridgeActivity {/a \    @Override\n    public void onStart() {\n        super.onStart();\n        this.bridge.getWebView().setDownloadListener(new DownloadListener() {\n            @Override\n            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimetype, long contentLength) {\n                DownloadManager.Request request = new DownloadManager.Request(Uri.parse(url));\n                request.setMimeType(mimetype);\n                String fileName = URLUtil.guessFileName(url, contentDisposition, mimetype);\n                request.setDescription("Downloading spreadsheet...");\n                request.setTitle(fileName);\n                request.allowScanningByMediaScanner();\n                request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);\n                request.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName);\n                DownloadManager dm = (DownloadManager) getSystemService(DOWNLOAD_SERVICE);\n                dm.enqueue(request);\n                Toast.makeText(getApplicationContext(), "Downloading Excel File...", Toast.LENGTH_LONG).show();\n            }\n        });\n    }' $MA_PATH
+
     - name: Compile and Build APK via Gradle
       run: |
         cd android && ./gradlew assembleDebug
