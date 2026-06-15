@@ -28,7 +28,7 @@ jobs:
 
     - name: Install Wrapper Tools
       run: |
-        npm install
+        npm install --legacy-peer-deps
 
     - name: Dynamically Create Web Assets Directory
       run: |
