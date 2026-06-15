@@ -19,10 +19,12 @@ jobs:
 
     - name: Install Mobile Build Dependencies
       run: |
-        # 🟢 Added --legacy-peer-deps to force installation past dependency conflicts
         npm install @capacitor/core @capacitor/cli --legacy-peer-deps
         npm install --legacy-peer-deps
+        
+        # 🟢 Create the www folder and add the missing index.html file that Capacitor is looking for
         mkdir -p www
+        echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading App...</h1></body></html>' > www/index.html
 
     - name: Handle Capacitor Platform Configuration
       run: |
