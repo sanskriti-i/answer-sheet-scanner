@@ -35,15 +35,18 @@ jobs:
         # 2. Wipe the incomplete layout directory
         rm -rf android
         
-        # 3. Force Capacitor to generate a pristine, official native structure complete with standard gradlew wrapper tools
+        # 3. Initialize Capacitor inline with app parameters before adding the platform
+        npx cap init "AI Scanner" "com.sanskriti.aiscanner" --web-dir="www"
+        
+        # 4. Force Capacitor to generate a pristine, official native structure complete with standard gradlew wrapper tools
         npx cap add android
         
-        # 4. Inject your custom source components back into the fresh clean template
+        # 5. Inject your custom source components back into the fresh clean template
         if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
           cp -r /tmp/custom_src/* android/app/src/main/
         fi
         
-        # 5. Sync web asset declarations safely
+        # 6. Sync web asset declarations safely
         npx cap sync android
 
     - name: Setup Java Development Kit JDK 17
