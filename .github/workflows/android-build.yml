@@ -22,31 +22,36 @@ jobs:
         npm install @capacitor/core @capacitor/cli --legacy-peer-deps
         npm install --legacy-peer-deps
         mkdir -p www
-        echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading...</h1></body></html>' > www/index.html
+        echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading App Engine...</h1></body></html>' > www/index.html
 
     - name: Reconstruct Stable Android Native Wrapper Workspace
       run: |
-        # 1. Back up your custom native source code temporarily
+        # 1. Back up your native configurations (like AndroidManifest) temporarily
         mkdir -p /tmp/custom_src
         if [ -d "android/app/src/main" ]; then
           cp -r android/app/src/main/* /tmp/custom_src/
         fi
         
-        # 2. Wipe the incomplete layout directory
+        # 2. Clear old template directory layout
         rm -rf android
         
-        # 3. Initialize Capacitor inline with app parameters before adding the platform
+        # 3. Initialize Capacitor with explicit pointer properties
         npx cap init "AI Scanner" "com.sanskriti.aiscanner" --web-dir="www"
         
-        # 4. Force Capacitor to generate a pristine, official native structure complete with standard gradlew wrapper tools
+        # 4. 🔴 CONFIGURE WRAPPER TO LAUNCH YOUR LIVE HOSTED URL
+        # Replace the URL below if your deployment link is different!
+        npx cap config set server.url "https://sanskriti-i-answer-sheet-scanner.hf.space"
+        npx cap config set server.cleartext true
+        
+        # 5. Build native platform workspace templates
         npx cap add android
         
-        # 5. Inject your custom source components back into the fresh clean template
+        # 6. Re-inject your custom native configurations (Manifest permissions)
         if [ -d "/tmp/custom_src" ] && [ "$(ls -A /tmp/custom_src)" ]; then
           cp -r /tmp/custom_src/* android/app/src/main/
         fi
         
-        # 6. Sync web asset declarations safely
+        # 7. Finalize assets sync verification
         npx cap sync android
 
     - name: Setup Java Development Kit JDK 17
