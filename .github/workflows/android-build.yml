@@ -21,8 +21,6 @@ jobs:
       run: |
         npm install @capacitor/core @capacitor/cli --legacy-peer-deps
         npm install --legacy-peer-deps
-        
-        # 🟢 Create the www folder and add the missing index.html file that Capacitor is looking for
         mkdir -p www
         echo '<!DOCTYPE html><html><head><title>App</title></head><body><h1>Loading App...</h1></body></html>' > www/index.html
 
@@ -41,6 +39,12 @@ jobs:
       with:
         distribution: 'zulu'
         java-version: '17'
+
+    - name: Generate Missing Gradle Wrapper files
+      run: |
+        cd android
+        # 🟢 Generates official gradlew executables automatically if they aren't in your repository
+        gradle wrapper --gradle-version 8.2
 
     - name: Compile and Build APK via Gradle Wrapper
       run: |
