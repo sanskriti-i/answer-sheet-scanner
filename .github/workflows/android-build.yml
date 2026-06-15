@@ -59,7 +59,7 @@ jobs:
         # 6. FORCE ANDROID HARD-CODED NAME TO "answer sheet scanner"
         sed -i 's/<string name="app_name">.*<\/string>/<string name="app_name">answer sheet scanner<\/string>/g' android/app/src/main/res/values/strings.xml
         
-        # 7. 🟢 CONFIGURE MOBILE WEBVIEW TO FORCE ENCRYPTED/BLOB EXCEL DOWNLOADS VIA THE SYSTEM BROWSER
+        # 7. CONFIGURE MOBILE WEBVIEW TO FORCE ENCRYPTED/BLOB EXCEL DOWNLOADS VIA THE SYSTEM BROWSER
         cat << 'EOF' > android/app/src/main/java/com/sanskriti/aiscanner/MainActivity.java
         package com.sanskriti.aiscanner;
 
