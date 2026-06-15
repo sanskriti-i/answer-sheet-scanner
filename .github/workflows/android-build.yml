@@ -30,13 +30,17 @@ jobs:
       run: |
         npm install
 
-    - name: Initialize Capacitor Wrapper Configuration
+    - name: Dynamically Create Web Assets Directory
       run: |
-        npx cap init "AI Scanner" "com.sanskriti.aiscanner" --web-dir=.
+        mkdir -p www
+        echo "" > www/index.html
 
-    - name: Inject Direct Hugging Face App URL
+    - name: Create Capacitor Config Manual
       run: |
         echo '{
+          "appId": "com.sanskriti.aiscanner",
+          "appName": "AI Scanner",
+          "webDir": "www",
           "server": {
             "url": "https://sanskriti006-answer-sheet-scanner.hf.space",
             "cleartext": true
