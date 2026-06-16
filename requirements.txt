@@ -1,7 +1,6 @@
-streamlit
-pandas
-pillow
-pydantic
-google-generativeai
-xlsxwriter
-openpyxl
+streamlit>=1.35.0
+pandas>=2.0.0
+Pillow>=10.0.0
+google-generativeai>=0.5.2
+pydantic>=2.0.0
+xlsxwriter>=3.1.0
