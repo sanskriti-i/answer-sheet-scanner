@@ -10,13 +10,12 @@ from pydantic import BaseModel, Field
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 
-# --- 1. SET UP STATIC DOWNLOAD DIRECTORY ---
-# This creates a public folder on the cloud server to store and serve the excel sheets
+# --- 1. SET UP LOCAL STORAGE DIRECTORY ---
 DOWNLOAD_DIR = "static_downloads"
 if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
 
-# --- 2. DATA ARCHITECTURE (Fixed to use standard Pydantic, bypassing Streamlit mismatches) ---
+# --- 2. DATA ARCHITECTURE ---
 class ScoreEntry(BaseModel):
     column_letter: str = Field(description="The letter header of the column ('a', 'b', 'c', or 'd') where a handwritten mark is visible.")
     score: str = Field(description="The explicit handwritten mark found inside this cell.")
@@ -44,7 +43,7 @@ prompt = (
     "- Convert handwritten fractional markings to tidy decimals (e.g., '½' to '0.5', '1½' to '1.5')."
 )
 
-# Streamlit Page Setup
+# Streamlit Configurations
 st.set_page_config(page_title="AI Verification Scanner", page_icon="📝", layout="wide")
 
 st.title("📝 Student Marks Multi-Scanner with Continuous Saving")
@@ -115,7 +114,6 @@ with col1:
                     model = genai.GenerativeModel('gemini-2.5-flash')
                     content_payload = [img, prompt]
                     
-                    # Direct dictionary configuration bypasses internal version mismatches completely
                     response = model.generate_content(
                         content_payload,
                         generation_config={
@@ -192,21 +190,18 @@ with col2:
         master_df = master_df[ordered_columns]
         st.dataframe(master_df, hide_index=True, use_container_width=True)
         
-        # --- 💾 SENIOR'S FILE-RESERVATION ROUTING PATCH ---
-        # 1. Save the file to the local directory folder on the server
+        # --- 💾 LOCAL DIRECTORY EXCEL RESERVATION ---
         filename = "compiled_student_marks.xlsx"
         local_file_path = os.path.join(DOWNLOAD_DIR, filename)
         
         with pd.ExcelWriter(local_file_path, engine='xlsxwriter') as writer:
             master_df.to_excel(writer, index=False, sheet_name='All Marks')
             
-        # 2. Read back bytes for the backup PC button
         with open(local_file_path, "rb") as f:
             excel_bytes = f.read()
 
         col_dl1, col_dl2 = st.columns([1, 1])
         with col_dl1:
-            # Traditional Button for Laptops
             st.download_button(
                 label="📥 Download Excel Sheet (PC/Laptop)", 
                 data=excel_bytes, 
@@ -215,8 +210,7 @@ with col2:
                 type="secondary"
             )
             
-            # --- 📱 MOBILE CONVERTED HTTP LINK ---
-            # Creates a robust download URL using base64 data encoding to trick the mobile browser wrapper
+            # Converted Mobile URL Link Patch
             b64_excel = base64.b64encode(excel_bytes).decode()
             mobile_download_url = f"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_excel}"
             
