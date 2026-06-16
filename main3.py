@@ -6,7 +6,6 @@ import base64
 import pandas as pd
 import streamlit as st
 from PIL import Image
-from pydantic import BaseModel, Field
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 
@@ -15,32 +14,52 @@ DOWNLOAD_DIR = "static_downloads"
 if not os.path.exists(DOWNLOAD_DIR):
     os.makedirs(DOWNLOAD_DIR)
 
-# --- 2. DATA ARCHITECTURE ---
-class ScoreEntry(BaseModel):
-    column_letter: str = Field(description="The letter header of the column ('a', 'b', 'c', or 'd') where a handwritten mark is visible.")
-    score: str = Field(description="The explicit handwritten mark found inside this cell.")
-
-class QuestionRow(BaseModel):
-    question_number: str = Field(description="The printed index row number from 1 to 8 found in the 'Q. NO' column.")
-    sub_parts: list[ScoreEntry] = Field(description="A list of only the sub-parts containing explicit handwritten marks.")
-    question_total: str = Field(description="The handwritten row total mark found in the 'Total' column.")
-
-class AdvancedAnswerSheetData(BaseModel):
-    student_name: str = Field(description="The handwritten name of the student.")
-    roll_number: str = Field(description="The handwritten roll number of the student.")
-    marks_table: list[QuestionRow] = Field(description="The matrix containing exactly 8 rows for questions 1 through 8.")
-    grand_total_marks: str = Field(description="Final handwritten total marks from the bottom of the table.")
+# --- 2. RAW DICTIONARY SCHEMA LAYOUT (Replaces Pydantic to completely solve Error 400) ---
+raw_response_schema = {
+    "type": "OBJECT",
+    "properties": {
+        "student_name": {"type": "STRING", "description": "The handwritten name of the student."},
+        "roll_number": {"type": "STRING", "description": "The handwritten roll number of the student."},
+        "grand_total_marks": {"type": "STRING", "description": "Final handwritten total marks from the bottom of the table, converted to decimal format."},
+        "marks_table": {
+            "type": "ARRAY",
+            "description": "The matrix containing exactly 8 rows for questions 1 through 8.",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "question_number": {"type": "STRING", "description": "The printed index row number from 1 to 8 found in the 'Q. NO' column."},
+                    "question_total": {"type": "STRING", "description": "The handwritten row total mark found in the 'Total' column."},
+                    "sub_parts": {
+                        "type": "ARRAY",
+                        "description": "A list of only the sub-parts ('a', 'b', 'c', 'd') that contain explicitly handwritten marks.",
+                        "items": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "column_letter": {"type": "STRING", "description": "The letter header of the column ('a', 'b', 'c', or 'd') where a handwritten mark is explicitly visible."},
+                                "score": {"type": "STRING", "description": "The explicit handwritten mark found inside this cell. Fractions converted to decimals."}
+                            },
+                            "required": ["column_letter", "score"]
+                        }
+                    }
+                },
+                "required": ["question_number", "question_total", "sub_parts"]
+            }
+        }
+    },
+    "required": ["student_name", "roll_number", "grand_total_marks", "marks_table"]
+}
 
 # --- 3. GROUNDED ANCHORING PROMPT ---
 prompt = (
     "You are an expert academic data extraction system. Your job is to strictly transcribe handwritten entries from an answer sheet grid into JSON.\n\n"
     "GRID LAYOUT RULES:\n"
-    "- Column 1 ('Q. NO'): Contains pre-printed structural index labels (1 to 8). NEVER extract these as a student's score.\n"
+    "- Column 1 ('Q. NO'): Contains pre-printed structural index labels (1, 2, 3, 4, 5, 6, 7, 8). These are labels, NOT marks. NEVER extract these as a student's score.\n"
     "- Columns 2-5 ('a', 'b', 'c', 'd'): Contain ONLY student marks handwritten by the examiner.\n"
-    "- Column 6 ('Total'): Contains the handwritten total for that row.\n"
+    "- Column 6 ('Total'): Contains the handwritten total for that row.\n\n"
     "CRITICAL HANDLING FOR EMPTY CELLS:\n"
-    "- If a column cell is blank, do not include its object inside the sub_parts array.\n"
-    "- Convert handwritten fractional markings to tidy decimals (e.g., '½' to '0.5', '1½' to '1.5')."
+    "- Look closely at Question 1. If column 'a' is blank or contains no handwriting, you MUST NOT generate an object for column 'a' inside the `sub_parts` array.\n"
+    "- Only extract values that are explicitly handwritten inside the grid cell boundaries. Never substitute an empty cell with the adjacent pre-printed 'Q. NO' number.\n"
+    "- Convert handwritten fractional markings to tidy decimals (e.g., '½' to '0.5', '1½' to '1.5', '2½' to '2.5')."
 )
 
 # Streamlit Configurations
@@ -114,11 +133,12 @@ with col1:
                     model = genai.GenerativeModel('gemini-2.5-flash')
                     content_payload = [img, prompt]
                     
+                    # Direct layout implementation parameters completely bypasses Pydantic restrictions
                     response = model.generate_content(
                         content_payload,
                         generation_config={
                             "response_mime_type": "application/json",
-                            "response_schema": AdvancedAnswerSheetData,
+                            "response_schema": raw_response_schema,
                             "temperature": 0.1
                         }
                     )
