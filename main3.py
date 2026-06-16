@@ -10,40 +10,11 @@ from pydantic import BaseModel, Field
 import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 
-# --- 🛰️ FASTAPI BACKGROUND ROUTER PATCH ---
-# This initializes a background server instance on Hugging Face to serve direct URLs
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
-import uvicorn
-import threading
-
-# Create a local folder on the Hugging Face server to hold generated Excel files
-DOWNLOAD_DIR = "static_downloads"
-if not os.path.exists(DOWNLOAD_DIR):
-    os.makedirs(DOWNLOAD_DIR)
-
-api_app = FastAPI()
-
-@api_app.get("/download/{filename}")
-def serve_excel_file_via_url(filename: str):
-    """Dynamically captures request strings and serves raw downloads to phones cleanly."""
-    safe_filepath = os.path.join(DOWNLOAD_DIR, filename)
-    if os.path.exists(safe_filepath):
-        return FileResponse(
-            path=safe_filepath, 
-            filename=filename,
-            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-    raise HTTPException(status_code=404, detail="Requested file not ready or expired.")
-
-def launch_fastapi_thread():
-    # Runs FastAPI quietly in the background on local port 8000
-    uvicorn.run(api_app, host="0.0.0.0", port=8000, log_level="error")
-
-if "fastapi_active" not in st.session_state:
-    threading.Thread(target=launch_fastapi_thread, daemon=True).start()
-    st.session_state.fastapi_active = True
-# -------------------------------------------
+# --- 💾 STATIC MOBILE DIRECTORY SETUP ---
+# Creates a special 'static' folder that Streamlit automatically serves over the web
+STATIC_DIR = "static"
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
 
 # 🟢 CLEAN DATA STRUCTURE FOR GEMINI STRUCTURED OUTPUTS (ZERO DEFAULTS)
 class QuestionRow(BaseModel):
@@ -282,10 +253,11 @@ with col2:
         
         st.dataframe(master_df, hide_index=True, use_container_width=True)
         
-        # --- 💾 MODIFIED EXCEL PREPARATION AREA ---
+        # --- 💾 FIXED LOCAL EXCEL STORAGE ---
         filename = "compiled_student_marks.xlsx"
-        local_file_path = os.path.join(DOWNLOAD_DIR, filename)
+        local_file_path = os.path.join(STATIC_DIR, filename)
         
+        # Saves the file straight into your server's public folder
         with pd.ExcelWriter(local_file_path, engine='xlsxwriter') as writer:
             master_df.to_excel(writer, index=False, sheet_name='All Marks')
         
@@ -293,7 +265,7 @@ with col2:
             excel_bytes = f.read()
             
         buffer = io.BytesIO(excel_bytes)
-        # ------------------------------------------
+        # ------------------------------------
         
         col_dl1, col_dl2 = st.columns([1, 1])
         with col_dl1:
@@ -305,11 +277,12 @@ with col2:
                 type="primary"
             )
             
-            # --- 📱 MOBILE HTTP ROUTING LINK ---
-            fastapi_url = f"https://xyz-12-answer-sheet-scanner.hf.space/download/{filename}"
+            # --- 📱 CLEAN MOBILE DIRECT ROUTING LINK ---
+            # Hugging face transparently converts static/ paths directly into root endpoints!
+            mobile_url = f"https://sanskriti006-answer-sheet-scanner.hf.space/static/{filename}"
             
             mobile_html_link = f'''
-            <a href="{fastapi_url}" target="_blank" style="
+            <a href="{mobile_url}" target="_blank" style="
                 background-color: #00cc66; 
                 color: white; 
                 padding: 10px 20px; 
@@ -321,7 +294,7 @@ with col2:
                 margin-top: 8px;
                 width: 100%;
                 box-shadow: 0px 3px 5px rgba(0,0,0,0.15);
-            ">📱 Download via Mobile URL (FastAPI)</a>
+            ">📱 Download via Mobile URL</a>
             '''
             st.markdown(mobile_html_link, unsafe_allow_html=True)
 
