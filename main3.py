@@ -11,9 +11,9 @@ import google.generativeai as genai
 from google.api_core.exceptions import ResourceExhausted
 
 # --- 🛰️ FASTAPI BACKGROUND ROUTER PATCH ---
-# This initializes a background server instances on Hugging Face to serve direct URLs
-from fastapi import FastAPI
-from fastapi.responses import FileResponse, HTTPException
+# This initializes a background server instance on Hugging Face to serve direct URLs
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 import uvicorn
 import threading
 
@@ -286,11 +286,9 @@ with col2:
         filename = "compiled_student_marks.xlsx"
         local_file_path = os.path.join(DOWNLOAD_DIR, filename)
         
-        # 1. This writes and saves the file directly into your local server directory
         with pd.ExcelWriter(local_file_path, engine='xlsxwriter') as writer:
             master_df.to_excel(writer, index=False, sheet_name='All Marks')
         
-        # 2. Open file as raw data bytes to satisfy the fallback download stream
         with open(local_file_path, "rb") as f:
             excel_bytes = f.read()
             
@@ -299,7 +297,6 @@ with col2:
         
         col_dl1, col_dl2 = st.columns([1, 1])
         with col_dl1:
-            # Native Streamlit Button (PC Fallback)
             st.download_button(
                 label="📥 Download Compiled Master Excel Sheet",
                 data=buffer,
@@ -309,7 +306,6 @@ with col2:
             )
             
             # --- 📱 MOBILE HTTP ROUTING LINK ---
-            # Automatically hooks your running space URL wrapper with your custom download path
             fastapi_url = f"https://xyz-12-answer-sheet-scanner.hf.space/download/{filename}"
             
             mobile_html_link = f'''
@@ -328,7 +324,6 @@ with col2:
             ">📱 Download via Mobile URL (FastAPI)</a>
             '''
             st.markdown(mobile_html_link, unsafe_allow_html=True)
-            # ------------------------------------
 
         with col_dl2:
             if st.button("🗑️ Clear Entire Session Data", type="secondary"):
